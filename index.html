@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>《通志·六书略》统计分析与可视化系统</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+
+        /* Header Styling */
+        header {
+            background-color: #3a4f6a;
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            letter-spacing: 1px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Sidebar Styling */
+        aside {
+            background-color: #ffffff;
+            width: 80px;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            padding-top: 60px;
+            border-right: 1px solid #ddd;
+        }
+
+        /* Sidebar intersection with header */
+        aside::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background-color: #3a4f6a;
+            z-index: -1;
+        }
+
+        aside ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        aside ul li {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        aside ul li a {
+            color: #333;
+            text-decoration: none;
+            font-size: 1.1em;
+            display: block;
+            padding: 10px 20px;
+            transition: background-color 0.3s;
+            border-radius: 4px;
+        }
+
+        aside ul li a:hover {
+            background-color: #f0f2f5;
+        }
+
+        /* Main Content Area */
+        main {
+            margin-left: 100px;
+            padding: 20px;
+        }
+
+        h1 {
+            font-weight: 300;
+            margin-bottom: 40px;
+            font-family: 'Georgia', serif;
+            font-size: 2.5em;
+            letter-spacing: 1px;
+            position: relative;
+            text-align: center;
+            background-color: #4fa0d6;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        #controls {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        #filter,
+        #search {
+            margin: 0 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #filter:focus,
+        #search:focus {
+            border-color: #4fa0d6;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            table-layout: fixed;
+            /* Ensures even column widths */
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border: 1px solid #eee;
+            text-align: center;
+            word-wrap: break-word;
+            /* Ensures text wraps within cells */
+        }
+
+        th {
+            background-color: #4fa0d6;
+            color: white;
+            font-weight: 600;
+        }
+
+        .highlight-large {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .highlight-bold {
+            font-weight: bold;
+        }
+
+        .corresponding {
+            background-color: #e0f7fa;
+            color: #00695c;
+        }
+
+        .contains {
+            background-color: #fff8e1;
+            color: #ff6f00;
+        }
+
+        .not-corresponding {
+            background-color: #ffebee;
+            color: #d32f2f;
+        }
+
+        .download-button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 20px 10px;
+            background-color: #4fa0d6;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .download-button:hover {
+            background-color: #3584b3;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .download-button:active {
+            transform: translateY(2px);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+    <header>《通志·六书略》统计分析与可视化系统</header>
+    <aside>
+        <ul>
+            <li><a href="六书略数据分析.html">数据分析</a></li>
+        </ul>
+    </aside>
+    <main>
+        <!-- Removed the redundant h1 element -->
+
+        <div id="controls">
+            <select id="filter">
+                <option value="">全选</option>
+            </select>
+            <input type="text" id="search" placeholder="搜索表格內容...">
+        </div>
+
+        <table id="results-table">
+            <thead>
+                <tr>
+                    <th>被注音字</th>
+                    <th>鄭樵</th>
+                    <th>説文</th>
+                    <th>説文关系</th>
+                    <th>類篇</th>
+                    <th>類篇关系</th>
+                    <th>原本玉篇</th>
+                    <th>原本玉篇关系</th>
+                    <th>宋本玉篇</th>
+                    <th>宋本玉篇关系</th>
+                    <th>廣韻</th>
+                    <th>廣韻关系</th>
+                    <th>集韻</th>
+                    <th>集韻关系</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <button class="download-button" onclick="downloadTableAsImage()">下载表格前十行为图片</button>
+    </main>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas"></script>
+    <script>
+        d3.json("yinzhu.json").then(function (data) {
+            const tbody = d3.select("#results-table tbody");
+            const filterSelect = document.getElementById('filter');
+            const searchInput = document.getElementById('search');
+
+            // 定义列名
+            const columns = ["説文", "類篇", "原本玉篇", "宋本玉篇", "廣韻", "集韻"];
+
+            // 获取唯一的被注音字列表
+            const uniquePinyinzis = [...new Set(data.map(d => d["被注音字"]))];
+            uniquePinyinzis.forEach(pin => {
+                const option = document.createElement("option");
+                option.value = pin;
+                option.text = pin;
+                filterSelect.appendChild(option);
+            });
+
+            // 检查鄭樵与其他的关系
+            function checkRelationship(zhengqiao, other) {
+                other = String(other);  // 确保 other 是字符串
+                if (zhengqiao === other) {
+                    return "对应";
+                } else if (other.includes(zhengqiao)) {
+                    return "包含";
+                } else {
+                    return "不对应";
+                }
+            }
+
+            // 处理每一行数据
+            function renderTable(filteredData) {
+                tbody.html("");
+                filteredData.forEach((d, i) => {
+                    const row = tbody.append("tr");
+
+                    // 添加原始数据
+                    row.append("td").text(d["被注音字"]);
+                    row.append("td").text(d["鄭樵"]);
+
+                    // 根据关系动态应用样式
+                    columns.forEach((col, index) => {
+                        const rel = checkRelationship(d["鄭樵"], d[col]);
+                        const cell = row.append("td");
+
+                        // 对应关系字体增大
+                        if (rel === "对应") {
+                            cell.html(`<span class="highlight-large">${d[col]}</span>`);
+                        }
+                        // 包含关系加粗被包含的部分
+                        else if (rel === "包含") {
+                            const highlightedText = d[col].replace(new RegExp(d["鄭樵"], 'g'), `<span class="highlight-bold">${d["鄭樵"]}</span>`);
+                            cell.html(highlightedText);
+                        }
+                        // 不对应保持原样
+                        else {
+                            cell.text(d[col]);
+                        }
+
+                        // 添加关系列
+                        row.append("td").text(rel).attr("class", getClass(rel));
+                    });
+                });
+            }
+
+            renderTable(data);
+
+            // 根据关系返回相应的 CSS 类
+            function getClass(relationship) {
+                if (relationship === "对应") {
+                    return "corresponding";
+                } else if (relationship === "包含") {
+                    return "contains";
+                } else {
+                    return "not-corresponding";
+                }
+            }
+
+            // 过滤功能
+            filterSelect.addEventListener('change', function () {
+                const selectedPin = this.value;
+                const filteredData = selectedPin ? data.filter(d => d["被注音字"] === selectedPin) : data;
+                renderTable(filteredData);
+            });
+
+            // 搜索功能
+            searchInput.addEventListener('keyup', function () {
+                const query = this.value.toLowerCase();
+                const filteredData = data.filter(d => Object.values(d).some(val => String(val).toLowerCase().includes(query)));
+                renderTable(filteredData);
+            });
+
+            // 下载表格前十行作为图片
+            function downloadTableAsImage() {
+                const table = document.querySelector("#results-table");
+                const cloneTable = table.cloneNode(true);
+
+                // 删除多余的行，只保留前十行
+                const rows = cloneTable.querySelectorAll("tr");
+                for (let i = rows.length - 1; i >= 11; i--) {
+                    cloneTable.deleteRow(i);
+                }
+
+                // 创建一个临时容器用于生成图片
+                const tempContainer = document.createElement("div");
+                tempContainer.style.position = "fixed";
+                tempContainer.style.left = "-9999px";
+                tempContainer.appendChild(cloneTable);
+                document.body.appendChild(tempContainer);
+
+                // 使用 html2canvas 将表格前十行转换为图片
+                html2canvas(tempContainer).then(canvas => {
+                    const link = document.createElement('a');
+                    link.href = canvas.toDataURL('image/png');
+                    link.download = '表格前十行.png';
+                    link.click();
+                    document.body.removeChild(tempContainer); // 移除临时容器
+                });
+            }
+
+            // 将下载函数暴露到全局作用域，以便按钮可以访问
+            window.downloadTableAsImage = downloadTableAsImage;
+
+        }).catch(function (error) {
+            console.error("Error loading or parsing yinzhu.json:", error);
+        });
+    </script>
+</body>
+
+</html>

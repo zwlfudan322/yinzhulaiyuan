@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>郑樵音注整体分析+ 可追溯语料</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+
+  <style>
+    :root {
+      /* 基础底色：纸感冷灰 */
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --line: #e7e9f0;
+      --text: #111827;
+      --muted: #6b7280;
+
+      /* 主色：克制蓝 */
+      --brand: #2f6fb0;
+      --brand-2: #1f4f80;
+
+      /* ★关系配色：与你原来表格对应（对应/包含/不对应） */
+      --strong-bg: #e0f7fa;
+      /* corresponding background */
+      --strong-fg: #00695c;
+      /* corresponding text */
+
+      --weak-bg: #fff8e1;
+      /* contains background */
+      --weak-fg: #ff6f00;
+      /* contains text */
+
+      --diff-bg: #ffebee;
+      /* not-corresponding background */
+      --diff-fg: #d32f2f;
+      /* not-corresponding text */
+
+      --miss-bg: #eceff3;
+      /* neutral */
+      --miss-fg: #64748b;
+
+      --hm-stroke: #eef1f7;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Arial, "Noto Sans SC", "PingFang SC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      background: linear-gradient(90deg, var(--brand-2), var(--brand));
+      color: #fff;
+      padding: 14px 18px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    .wrap {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 14px;
+      padding: 14px;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 0 10px 22px rgba(16, 24, 40, 0.08);
+      padding: 14px;
+    }
+
+    .card+.card {
+      margin-top: 14px;
+    }
+
+    h2 {
+      margin: 0 0 6px 0;
+      font-size: 16px;
+    }
+
+    .desc {
+      margin: 0 0 10px 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 8px 0 10px 0;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+
+    .dot.strong {
+      background: var(--strong-bg);
+      border: 1px solid rgba(0, 105, 92, 0.25);
+    }
+
+    .dot.weak {
+      background: var(--weak-bg);
+      border: 1px solid rgba(255, 111, 0, 0.25);
+    }
+
+    .dot.diff {
+      background: var(--diff-bg);
+      border: 1px solid rgba(211, 47, 47, 0.25);
+    }
+
+    .dot.miss {
+      background: var(--miss-bg);
+      border: 1px solid rgba(100, 116, 139, 0.22);
+    }
+
+    svg {
+      width: 100%;
+      height: auto;
+      display: block;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+
+    /* Side panel */
+    .panel {
+      position: sticky;
+      top: 14px;
+      max-height: calc(100vh - 28px);
+      overflow: auto;
+    }
+
+    .panel .title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .badge {
+      font-size: 12px;
+      color: #0f172a;
+      background: #eef2ff;
+      border: 1px solid #e0e7ff;
+      padding: 4px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .panel .hint {
+      color: var(--muted);
+      font-size: 12px;
+      margin: 0 0 10px 0;
+      line-height: 1.45;
+    }
+
+    .panel .search {
+      display: flex;
+      gap: 8px;
+      margin: 10px 0 10px 0;
+    }
+
+    .panel input {
+      flex: 1;
+      padding: 9px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      outline: none;
+      font-size: 13px;
+      background: #fff;
+    }
+
+    .panel button {
+      padding: 9px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #fff;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .item {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      background: #fff;
+    }
+
+    .item .row1 {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+
+    .char {
+      font-weight: 900;
+      font-size: 16px;
+      letter-spacing: 0.2px;
+    }
+
+    /* pill 按你表格三色逻辑 */
+    .pill {
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      color: #334155;
+      white-space: nowrap;
+    }
+
+    .pill.corresponding {
+      background: var(--strong-bg);
+      color: var(--strong-fg);
+      border-color: rgba(0, 105, 92, 0.18);
+    }
+
+    .pill.contains {
+      background: var(--weak-bg);
+      color: var(--weak-fg);
+      border-color: rgba(255, 111, 0, 0.18);
+    }
+
+    .pill.not-corresponding {
+      background: var(--diff-bg);
+      color: var(--diff-fg);
+      border-color: rgba(211, 47, 47, 0.18);
+    }
+
+    .pill.missing {
+      background: var(--miss-bg);
+      color: var(--miss-fg);
+      border-color: rgba(100, 116, 139, 0.18);
+    }
+
+    .kv {
+      display: grid;
+      grid-template-columns: 78px 1fr;
+      gap: 6px 10px;
+      font-size: 12px;
+      color: #334155;
+    }
+
+    .k {
+      color: var(--muted)
+    }
+
+    .v {
+      word-break: break-word
+    }
+
+    .tiny {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+
+    /* Tooltip */
+    .tooltip {
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      background: #0b1220;
+      color: #fff;
+      padding: 8px 10px;
+      font-size: 12px;
+      border-radius: 10px;
+      max-width: 340px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity .12s ease, transform .12s ease;
+      line-height: 1.35;
+      white-space: normal;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .tooltip.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .clickTip {
+      font-size: 11px;
+      color: #cbd5e1;
+      margin-top: 4px;
+    }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .note {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>郑樵音注整体分析+ 可追溯语料（点击查看）</header>
+
+  <div class="wrap">
+    <div class="left">
+      <div class="card">
+        <h2>一、整体一致性与分歧结构</h2>
+        <p class="desc">
+          ：<b>对应</b>（完全相同） / <b>包含</b>（包含郑樵反切） / <b>分歧</b>（其他） / <b>缺失</b>（空值）。
+          图上显示：数量与百分比。点击色块 → 右侧查看对应语料。
+          <br />配色与原表格一致：对应=青、包含=黄、不对应=红、缺失=灰。
+        </p>
+        <div class="legend">
+          <span><i class="dot strong"></i>对应</span>
+          <span><i class="dot weak"></i>包含</span>
+          <span><i class="dot diff"></i>分歧（不对应）</span>
+          <span><i class="dot miss"></i>缺失</span>
+        </div>
+        <svg id="stacked" viewBox="0 0 980 340"></svg>
+      </div>
+
+      <div class="card">
+        <h2>二、书—书整体相似性热力图</h2>
+        <p class="desc">
+          相似度 = 两书都非空时，“完全相同或互相包含”视为一致。每格显示：<b>相似度%</b> + <b>可比条数 n</b>。点击任意格子 → 右侧查看两书可比语料（含一致/不一致标注）。
+        </p>
+        <svg id="heatmap" viewBox="0 0 980 520"></svg>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <h2>三、MDS 文献地图</h2>
+          <p class="desc">
+            以距离 = 1 − 相似度，做经典 MDS 二维投影。点越近表示整体越相似。点击某点 → 右侧给出“该书 vs 郑樵”的整体概览提示（进一步语料请回到堆叠柱点击色块）。
+          </p>
+          <svg id="mds" viewBox="0 0 980 440"></svg>
+          <p class="note">提示：MDS 是整体结构投影，用于呈现聚类/接近性；具体证据仍以点击回语料为准。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card panel">
+      <div class="title">
+        <h2 style="margin:0;">语料查看</h2>
+        <span class="badge" id="panelBadge">等待点击</span>
+      </div>
+      <p class="hint" id="panelHint">
+        点击堆叠柱色块 / 热力图格子，即可在这里查看对应语料。支持关键词过滤。
+      </p>
+
+      <div class="search">
+        <input id="panelSearch" placeholder="在当前语料集中搜索…" />
+        <button id="panelClear">清空</button>
+      </div>
+
+      <div class="list" id="panelList"></div>
+
+      <p class="tiny">
+        说明：采用“整体结构 → 点击回语料”的论证方式：可视化呈现宏观结构，语料面板提供可追溯证据。
+      </p>
+    </div>
+  </div>
+
+  <div class="tooltip" id="tt"></div>
+
+  <script>
+    // ====== 配置 ======
+    const books = ["説文", "類篇", "原本玉篇", "宋本玉篇", "廣韻", "集韻"];
+    const allBooksForHeat = ["鄭樵", ...books];
+
+    // ：相对郑樵的分类
+    function classifyToZhengqiao(zq, v) {
+      if (!v) return "缺失";
+      if (v === zq) return "对应";
+      if (String(v).includes(String(zq))) return "包含";
+      return "分歧";
+    }
+
+    // 两书宽松一致（相同或互含）
+    function isLenientMatch(a, b) {
+      if (!a || !b) return null; // 不可比
+      a = String(a); b = String(b);
+      return (a === b) || a.includes(b) || b.includes(a);
+    }
+
+    // 将类别映射到“你原表格三色类名”
+    function clsToPillClass(k) {
+      if (k === "对应") return "corresponding";
+      if (k === "包含") return "contains";
+      if (k === "分歧") return "not-corresponding";
+      return "missing";
+    }
+
+    // ====== tooltip ======
+    const tt = document.getElementById("tt");
+    function showTT(x, y, html) {
+      tt.innerHTML = html;
+      tt.style.left = (x + 12) + "px";
+      tt.style.top = (y + 12) + "px";
+      tt.classList.add("show");
+    }
+    function hideTT() { tt.classList.remove("show"); }
+
+    // ====== 右侧面板 ======
+    const panelBadge = document.getElementById("panelBadge");
+    const panelHint = document.getElementById("panelHint");
+    const panelList = document.getElementById("panelList");
+    const panelSearch = document.getElementById("panelSearch");
+    const panelClear = document.getElementById("panelClear");
+
+    let currentItems = [];
+    let currentMeta = { badge: "等待点击", hint: "点击任意图形元素查看语料。", mode: "none" };
+
+    function escapeHtml(s) {
+      return String(s ?? "").replace(/[&<>"']/g, m => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[m]));
+    }
+
+    function renderPanel(items, meta) {
+      currentItems = items;
+      currentMeta = meta;
+
+      panelBadge.textContent = meta.badge;
+      panelHint.textContent = meta.hint;
+
+      panelSearch.value = "";
+      panelList.innerHTML = "";
+
+      if (items.length === 0) {
+        panelList.innerHTML = `<div class="item"><div class="tiny">（当前集合为空）</div></div>`;
+        return;
+      }
+
+      const frag = document.createDocumentFragment();
+      items.slice(0, 800).forEach(it => {
+        const div = document.createElement("div");
+        div.className = "item";
+        const pill = it.pill
+          ? `<span class="pill ${escapeHtml(it.pillClass || "")}">${escapeHtml(it.pill)}</span>`
+          : "";
+        div.innerHTML = `
+        <div class="row1">
+          <span class="char">${escapeHtml(it.char)}</span>
+          ${pill}
+        </div>
+        <div class="kv">
+          <div class="k">${escapeHtml(it.k1)}</div><div class="v">${escapeHtml(it.v1)}</div>
+          <div class="k">${escapeHtml(it.k2)}</div><div class="v">${escapeHtml(it.v2)}</div>
+        </div>
+        ${it.extra ? `<div class="tiny">${escapeHtml(it.extra)}</div>` : ``}
+      `;
+        frag.appendChild(div);
+      });
+      panelList.appendChild(frag);
+
+      if (items.length > 800) {
+        const more = document.createElement("div");
+        more.className = "item";
+        more.innerHTML = `<div class="tiny">为保证流畅，仅展示前 800 条（当前集合共 ${items.length} 条）。可先筛选再查看。</div>`;
+        panelList.appendChild(more);
+      }
+    }
+
+    function applyPanelSearch() {
+      const q = panelSearch.value.trim().toLowerCase();
+      if (!q) {
+        renderPanel(currentItems, currentMeta);
+        return;
+      }
+      const filtered = currentItems.filter(it => {
+        const t = [
+          it.char, it.v1, it.v2, it.extra, it.pill, it.k1, it.k2
+        ].map(x => String(x ?? "").toLowerCase()).join(" | ");
+        return t.includes(q);
+      });
+      const meta = { ...currentMeta, badge: currentMeta.badge + ` · 检索到${filtered.length}` };
+      renderPanel(filtered, meta);
+    }
+
+    panelSearch.addEventListener("input", applyPanelSearch);
+    panelClear.addEventListener("click", () => {
+      panelSearch.value = "";
+      renderPanel(currentItems, currentMeta);
+    });
+
+    // ====== Jacobi 特征分解（对称矩阵，小规模） ======
+    function jacobiEigenDecomposition(A, maxIter = 150, eps = 1e-12) {
+      const n = A.length;
+      const a = A.map(r => r.slice());
+      const V = Array.from({ length: n }, (_, i) => {
+        const row = Array(n).fill(0);
+        row[i] = 1;
+        return row;
+      });
+
+      function maxOffDiag() {
+        let p = 0, q = 1, max = 0;
+        for (let i = 0; i < n; i++) {
+          for (let j = i + 1; j < n; j++) {
+            const val = Math.abs(a[i][j]);
+            if (val > max) { max = val; p = i; q = j; }
+          }
+        }
+        return { p, q, max };
+      }
+
+      for (let iter = 0; iter < maxIter; iter++) {
+        const { p, q, max } = maxOffDiag();
+        if (max < eps) break;
+
+        const app = a[p][p], aqq = a[q][q], apq = a[p][q];
+        const phi = 0.5 * Math.atan2(2 * apq, (aqq - app));
+        const c = Math.cos(phi), s = Math.sin(phi);
+
+        for (let i = 0; i < n; i++) {
+          if (i !== p && i !== q) {
+            const aip = a[i][p], aiq = a[i][q];
+            a[i][p] = a[p][i] = c * aip - s * aiq;
+            a[i][q] = a[q][i] = s * aip + c * aiq;
+          }
+        }
+        const app2 = c * c * app - 2 * s * c * apq + s * s * aqq;
+        const aqq2 = s * s * app + 2 * s * c * apq + c * c * aqq;
+        a[p][p] = app2;
+        a[q][q] = aqq2;
+        a[p][q] = a[q][p] = 0;
+
+        for (let i = 0; i < n; i++) {
+          const vip = V[i][p], viq = V[i][q];
+          V[i][p] = c * vip - s * viq;
+          V[i][q] = s * vip + c * viq;
+        }
+      }
+
+      const eigenValues = a.map((r, i) => r[i]);
+      const idx = eigenValues.map((v, i) => [v, i]).sort((x, y) => y[0] - x[0]).map(d => d[1]);
+      const values = idx.map(i => eigenValues[i]);
+      const vectors = idx.map(i => V.map(row => row[i]));
+      return { values, vectors };
+    }
+
+    // ====== 主逻辑 ======
+    d3.json("yinzhu.json").then(data => {
+      // 色块填充（与表格三色一致，用“背景色”做块）
+      const colors = {
+        "对应": getComputedStyle(document.documentElement).getPropertyValue("--strong-bg").trim(),
+        "包含": getComputedStyle(document.documentElement).getPropertyValue("--weak-bg").trim(),
+        "分歧": getComputedStyle(document.documentElement).getPropertyValue("--diff-bg").trim(),
+        "缺失": getComputedStyle(document.documentElement).getPropertyValue("--miss-bg").trim(),
+      };
+
+      // ---------- A) 堆叠柱 ----------
+      const perBook = {};
+      books.forEach(b => perBook[b] = { 对应: 0, 包含: 0, 分歧: 0, 缺失: 0, total: 0 });
+
+      data.forEach(d => {
+        const zq = d["鄭樵"] ?? "";
+        books.forEach(b => {
+          const cls = classifyToZhengqiao(zq, d[b] ?? "");
+          perBook[b][cls] += 1;
+          perBook[b].total += 1;
+        });
+      });
+
+      const order = ["对应", "包含", "分歧", "缺失"];
+      const stackedData = books.map(b => {
+        const t = perBook[b].total || 1;
+        const obj = { book: b, raw: perBook[b] };
+        order.forEach(k => obj[k] = perBook[b][k] / t);
+        return obj;
+      });
+
+      const ssvg = d3.select("#stacked");
+      const W = 980, H = 340;
+      const margin = { top: 18, right: 20, bottom: 60, left: 62 };
+      const innerW = W - margin.left - margin.right;
+      const innerH = H - margin.top - margin.bottom;
+      const g = ssvg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+      const x = d3.scaleBand().domain(books).range([0, innerW]).padding(0.22);
+      const y = d3.scaleLinear().domain([0, 1]).range([innerH, 0]);
+
+      g.append("g").attr("transform", `translate(0,${innerH})`)
+        .call(d3.axisBottom(x)).selectAll("text").style("font-size", "12px");
+
+      g.append("g")
+        .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format(".0%")))
+        .selectAll("text").style("font-size", "12px");
+
+      const stack = d3.stack().keys(order);
+      const series = stack(stackedData);
+
+      const seg = g.selectAll(".serie")
+        .data(series)
+        .enter().append("g")
+        .attr("fill", d => colors[d.key]);
+
+      seg.selectAll("rect")
+        .data(d => d.map(v => (v.key = d.key, v)))
+        .enter().append("rect")
+        .attr("x", d => x(d.data.book))
+        .attr("y", d => y(d[1]))
+        .attr("height", d => y(d[0]) - y(d[1]))
+        .attr("width", x.bandwidth())
+        .attr("stroke", "rgba(15,23,42,0.10)")
+        .style("cursor", "pointer")
+        .on("mousemove", (ev, d) => {
+          const b = d.data.book;
+          const k = d.key;
+          const raw = d.data.raw[k];
+          const pct = (d.data[k] * 100).toFixed(1);
+          showTT(ev.clientX, ev.clientY,
+            `<b>${b} — ${k}</b><br/>
+             数量：<b>${raw}</b>（${pct}%）<br/>
+             <div class="clickTip">点击查看对应语料</div>`
+          );
+        })
+        .on("mouseleave", hideTT)
+        .on("click", (ev, d) => {
+          const b = d.data.book;
+          const k = d.key;
+          const items = [];
+          data.forEach(row => {
+            const zq = row["鄭樵"] ?? "";
+            const v = row[b] ?? "";
+            if (classifyToZhengqiao(zq, v) === k) {
+              items.push({
+                char: row["被注音字"] ?? "",
+                k1: "鄭樵",
+                v1: zq,
+                k2: b,
+                v2: v,
+                pill: k,
+                pillClass: clsToPillClass(k),
+                extra: (k === "缺失" ? "该书该条为空，属于缺失/不可比。" :
+                  k === "分歧" ? "该书条目与郑樵不一致。" :
+                    k === "包含" ? "该书条目包含郑樵反切，记为包含。" :
+                      "完全相同，记为对应。")
+              });
+            }
+          });
+
+          const total = perBook[b].total || 1;
+          const n = perBook[b][k];
+          const pct = ((n / total) * 100).toFixed(1);
+
+          renderPanel(items, {
+            mode: "bar",
+            badge: `${b} · ${k} · ${n}条（${pct}%）`,
+            hint: `当前展示：${b} 在 “${k}” 类别下的语料（以郑樵为参照，）。可在上方搜索框筛选。`
+          });
+        });
+
+      // 标签：数量（百分比）——按不同色块选择文字颜色（深色即可）
+      const labelG = g.append("g");
+      series.forEach(s => {
+        const key = s.key;
+        labelG.selectAll(`.lab-${key}`)
+          .data(s)
+          .enter().append("text")
+          .attr("x", d => x(d.data.book) + x.bandwidth() / 2)
+          .attr("y", d => {
+            const mid = (d[0] + d[1]) / 2;
+            return y(mid);
+          })
+          .attr("text-anchor", "middle")
+          .attr("dominant-baseline", "middle")
+          .style("font-size", "11px")
+          .style("fill", "#0f172a")
+          .style("pointer-events", "none")
+          .text(d => {
+            const rawN = d.data.raw[key];
+            const pct = (d.data[key] * 100);
+            const hpx = (y(d[0]) - y(d[1]));
+            if (hpx < 18) return "";
+            return `${rawN}（${pct.toFixed(0)}%）`;
+          });
+      });
+
+      // ---------- B) 热力图 ----------
+      function similarity(a, b) {
+        let cmp = 0, same = 0;
+        data.forEach(row => {
+          const va = row[a] ?? "";
+          const vb = row[b] ?? "";
+          const m = isLenientMatch(va, vb);
+          if (m === null) return;
+          cmp++;
+          if (m) same++;
+        });
+        return { cmp, same, ratio: cmp ? same / cmp : 0 };
+      }
+
+      const hsv = d3.select("#heatmap");
+      const HW = 980, HH = 520;
+      const m2 = { top: 80, right: 20, bottom: 20, left: 100 };
+      const iw2 = HW - m2.left - m2.right;
+      const ih2 = HH - m2.top - m2.bottom;
+      const hg = hsv.append("g").attr("transform", `translate(${m2.left},${m2.top})`);
+
+      const col = d3.scaleBand().domain(allBooksForHeat).range([0, iw2]).padding(0.06);
+      const row = d3.scaleBand().domain(allBooksForHeat).range([0, ih2]).padding(0.06);
+
+      hg.append("g")
+        .call(d3.axisTop(col))
+        .selectAll("text")
+        .style("font-size", "12px")
+        .attr("transform", "rotate(-35)")
+        .style("text-anchor", "start");
+
+      hg.append("g")
+        .call(d3.axisLeft(row))
+        .selectAll("text")
+        .style("font-size", "12px");
+
+      const cells = [];
+      allBooksForHeat.forEach(a => {
+        allBooksForHeat.forEach(b => {
+          const s = similarity(a, b);
+          cells.push({ a, b, ...s });
+        });
+      });
+
+      const color = d3.scaleSequential(d3.interpolateBlues).domain([0, 1]);
+      const stroke = getComputedStyle(document.documentElement).getPropertyValue("--hm-stroke").trim();
+
+      const cellG = hg.append("g");
+
+      cellG.selectAll("rect")
+        .data(cells)
+        .enter().append("rect")
+        .attr("x", d => col(d.b))
+        .attr("y", d => row(d.a))
+        .attr("width", col.bandwidth())
+        .attr("height", row.bandwidth())
+        .attr("fill", d => color(d.ratio))
+        .attr("stroke", stroke)
+        .style("cursor", "pointer")
+        .on("mousemove", (ev, d) => {
+          showTT(ev.clientX, ev.clientY,
+            `<b>${d.a} ↔ ${d.b}</b><br/>
+             相似度：<b>${(d.ratio * 100).toFixed(1)}%</b><br/>
+             可比：${d.cmp} 条<br/>
+             <div class="clickTip">点击查看可比语料（含一致/不一致）</div>`
+          );
+        })
+        .on("mouseleave", hideTT)
+        .on("click", (ev, d) => {
+          const items = [];
+          data.forEach(r => {
+            const va = r[d.a] ?? "";
+            const vb = r[d.b] ?? "";
+            const m = isLenientMatch(va, vb);
+            if (m === null) return;
+            items.push({
+              char: r["被注音字"] ?? "",
+              k1: d.a,
+              v1: va,
+              k2: d.b,
+              v2: vb,
+              pill: m ? "一致" : "不一致",
+              pillClass: m ? "corresponding" : "not-corresponding",
+              extra: m ? "完全相同或互相包含 → 记为一致。" : "既不相同也不互含 → 记为不一致。"
+            });
+          });
+
+          const pct = (d.ratio * 100).toFixed(1);
+          renderPanel(items, {
+            mode: "heat",
+            badge: `${d.a} ↔ ${d.b} · ${pct}% · n=${d.cmp}`,
+            hint: `当前展示：${d.a} 与 ${d.b} 的可比语料（两书都非空）。一致=${d.same}，不一致=${d.cmp - d.same}。支持搜索过滤。`
+          });
+        });
+
+      // 数字：相似度% + n
+      cellG.selectAll("text.pct")
+        .data(cells)
+        .enter().append("text")
+        .attr("class", "pct")
+        .attr("x", d => col(d.b) + col.bandwidth() / 2)
+        .attr("y", d => row(d.a) + row.bandwidth() / 2 - 6)
+        .attr("text-anchor", "middle")
+        .style("font-size", "11px")
+        .style("fill", "#0f172a")
+        .style("pointer-events", "none")
+        .text(d => `${(d.ratio * 100).toFixed(0)}%`);
+
+      cellG.selectAll("text.cmp")
+        .data(cells)
+        .enter().append("text")
+        .attr("class", "cmp")
+        .attr("x", d => col(d.b) + col.bandwidth() / 2)
+        .attr("y", d => row(d.a) + row.bandwidth() / 2 + 10)
+        .attr("text-anchor", "middle")
+        .style("font-size", "10px")
+        .style("fill", "#334155")
+        .style("pointer-events", "none")
+        .text(d => `n=${d.cmp}`);
+
+      // ---------- C) MDS 文献地图 ----------
+      const n = allBooksForHeat.length;
+      const simMat = Array.from({ length: n }, () => Array(n).fill(0));
+      const cmpMat = Array.from({ length: n }, () => Array(n).fill(0));
+
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+          const s = similarity(allBooksForHeat[i], allBooksForHeat[j]);
+          simMat[i][j] = s.ratio;
+          cmpMat[i][j] = s.cmp;
+        }
+      }
+
+      // D^2
+      const D2 = Array.from({ length: n }, () => Array(n).fill(0));
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+          const d = 1 - simMat[i][j];
+          D2[i][j] = d * d;
+        }
+      }
+
+      // double centering: B = -0.5 * (D2 - rowMean - colMean + totalMean)
+      const rowMean = Array(n).fill(0);
+      const colMean = Array(n).fill(0);
+      let totalMean = 0;
+
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+          rowMean[i] += D2[i][j];
+          colMean[j] += D2[i][j];
+          totalMean += D2[i][j];
+        }
+      }
+      for (let i = 0; i < n; i++) rowMean[i] /= n;
+      for (let j = 0; j < n; j++) colMean[j] /= n;
+      totalMean /= (n * n);
+
+      const B = Array.from({ length: n }, () => Array(n).fill(0));
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+          B[i][j] = -0.5 * (D2[i][j] - rowMean[i] - colMean[j] + totalMean);
+        }
+      }
+
+      const { values, vectors } = jacobiEigenDecomposition(B, 180, 1e-12);
+
+      // 取前两大正特征值
+      const dims = [];
+      for (let k = 0; k < values.length; k++) {
+        if (values[k] > 1e-10) dims.push(k);
+        if (dims.length === 2) break;
+      }
+      const k1 = dims[0] ?? 0;
+      const k2 = dims[1] ?? 1;
+
+      const lam1 = Math.max(values[k1], 0);
+      const lam2 = Math.max(values[k2], 0);
+
+      const coords = allBooksForHeat.map((name, i) => ({
+        name,
+        x: vectors[k1][i] * Math.sqrt(lam1 || 0),
+        y: vectors[k2][i] * Math.sqrt(lam2 || 0)
+      }));
+
+      const msvg = d3.select("#mds");
+      const MW = 980, MH = 440;
+      const mm = { top: 20, right: 20, bottom: 34, left: 34 };
+      const iw = MW - mm.left - mm.right;
+      const ih = MH - mm.top - mm.bottom;
+      const mg = msvg.append("g").attr("transform", `translate(${mm.left},${mm.top})`);
+
+      const xExtent = d3.extent(coords, d => d.x);
+      const yExtent = d3.extent(coords, d => d.y);
+
+      const sx = d3.scaleLinear().domain([xExtent[0], xExtent[1]]).nice().range([0, iw]);
+      const sy = d3.scaleLinear().domain([yExtent[0], yExtent[1]]).nice().range([ih, 0]);
+
+      mg.append("g")
+        .attr("transform", `translate(0,${ih})`)
+        .call(d3.axisBottom(sx).ticks(5))
+        .selectAll("text").style("font-size", "10px").style("fill", "#64748b");
+
+      mg.append("g")
+        .call(d3.axisLeft(sy).ticks(5))
+        .selectAll("text").style("font-size", "10px").style("fill", "#64748b");
+
+      const brand = getComputedStyle(document.documentElement).getPropertyValue("--brand").trim();
+
+      mg.selectAll("circle")
+        .data(coords)
+        .enter().append("circle")
+        .attr("cx", d => sx(d.x))
+        .attr("cy", d => sy(d.y))
+        .attr("r", d => d.name === "鄭樵" ? 8 : 7)
+        .attr("fill", d => d.name === "鄭樵" ? brand : "#94a3b8")
+        .attr("stroke", "#0f172a")
+        .attr("stroke-opacity", 0.14)
+        .style("cursor", "pointer")
+        .on("mousemove", (ev, d) => {
+          const i = allBooksForHeat.indexOf(d.name);
+          const z = allBooksForHeat.indexOf("鄭樵");
+          const simToZQ = simMat[z][i];
+          const cmpToZQ = cmpMat[z][i];
+          showTT(ev.clientX, ev.clientY,
+            `<b>${d.name}</b><br/>
+             与郑樵相似度：<b>${(simToZQ * 100).toFixed(1)}%</b>（n=${cmpToZQ}）<br/>
+             <div class="clickTip">点击查看“该书 vs 郑樵”的整体概览提示</div>`
+          );
+        })
+        .on("mouseleave", hideTT)
+        .on("click", (ev, d) => {
+          if (d.name === "鄭樵") {
+            renderPanel([], {
+              mode: "mds",
+              badge: "MDS：郑樵",
+              hint: "你点击了“鄭樵”。建议点击其他书名点，以查看该书与郑樵的整体接近性。语料层面请回到堆叠柱图点击色块。"
+            });
+            return;
+          }
+          const b = d.name;
+          const s = perBook[b];
+          const total = s.total || 1;
+          const msg =
+            `你点击了 ${b}。\n` +
+            `相对郑樵：\n` +
+            `对应 ${s["对应"]}（${(s["对应"] / total * 100).toFixed(1)}%）；` +
+            `包含 ${s["包含"]}（${(s["包含"] / total * 100).toFixed(1)}%）；` +
+            `分歧（不对应） ${s["分歧"]}（${(s["分歧"] / total * 100).toFixed(1)}%）；` +
+            `缺失 ${s["缺失"]}（${(s["缺失"] / total * 100).toFixed(1)}%）。\n\n` +
+            `提示：若要看具体语料，请到“堆叠柱图”中点击 ${b} 的对应色块。`;
+
+          renderPanel([], {
+            mode: "mds",
+            badge: `MDS：${b}`,
+            hint: msg
+          });
+        });
+
+      mg.selectAll("text.label")
+        .data(coords)
+        .enter().append("text")
+        .attr("class", "label")
+        .attr("x", d => sx(d.x) + 10)
+        .attr("y", d => sy(d.y) + 4)
+        .style("font-size", "13px")
+        .style("fill", "#0f172a")
+        .text(d => d.name);
+
+      // ---------- 初始提示 ----------
+      function simToZq(book) {
+        const s = similarity("鄭樵", book);
+        return s;
+      }
+      let best = { b: null, ratio: -1, cmp: 0, same: 0 };
+      books.forEach(b => {
+        const s = simToZq(b);
+        if (s.ratio > best.ratio) { best = { b, ...s }; }
+      });
+
+      renderPanel([], {
+        mode: "none",
+        badge: "等待点击",
+        hint: `已加载 ${data.length} 条“被注音字”。提示：热力图中 “鄭樵 ↔ ${best.b}” 相似度最高（${(best.ratio * 100).toFixed(1)}%，n=${best.cmp}）。点击任意图形元素即可查看语料。`
+      });
+
+    }).catch(err => {
+      console.error(err);
+      renderPanel([], {
+        mode: "error",
+        badge: "加载失败",
+        hint: "无法读取 yinzhu.json。请确认文件名与路径（HTML同目录）并用浏览器重新打开。"
+      });
+    });
+  </script>
+</body>
+
+</html>
